@@ -1,23 +1,28 @@
-require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require("path");
+const axios = require("axios");
 
 const app = express();
-app.use(express.json());
-app.use(cors()); // ✅ Enable CORS
+const port = 3000;
 
-const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// **Connect to MySQL**
+// Google Gemini API Setup
+const GEMINI_API_KEY = "AIzaSyD5-hh0DQ-gdEIBBkbFqKQEsH6Gg7MC8js"; // Replace with your actual Gemini API key
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+
+// MySQL Connection
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "root",
     database: "therapy",
+    charset: "utf8mb4",
 });
 
 db.connect((err) => {
@@ -25,65 +30,146 @@ db.connect((err) => {
         console.error("Database connection failed:", err);
         return;
     }
-    console.log("✅ MySQL Connected!");
+    console.log("Connected to MySQL database");
 });
 
-// **Ensure Users Table Exists**
-db.query(
-    `CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL
-    )`,
-    (err) => {
-        if (err) console.error("Table creation error:", err);
-        else console.log("✅ Users table ready");
+app.use(express.static(path.join(__dirname, "public"))); // Serve static files
+
+// Register User
+app.post("/register", (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+        return res.status(400).json({ message: "All fields are required" });
     }
-);
 
-// **Register Route**
-app.post("/register", async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
-
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-        if (err) return res.status(500).json({ message: "Database error" });
-        if (results.length > 0) return res.status(400).json({ message: "User already exists" });
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert user
-        db.query("INSERT INTO users (email, password) VALUES (?, ?)", [email, hashedPassword], (err) => {
-            if (err) return res.status(500).json({ message: "Database error" });
-            res.status(201).json({ message: "Account created successfully" });
-        });
+    const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+    db.query(sql, [username, email, password], (err) => {
+        if (err) {
+            console.error("Database error during registration:", err);
+            return res.status(500).json({ message: "Error registering user" });
+        }
+        res.json({ message: "User registered successfully" });
     });
 });
 
-// **Login Route**
+// Login User
 app.post("/login", (req, res) => {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+    }
 
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-        if (err) return res.status(500).json({ message: "Database error" });
-        if (results.length === 0) return res.status(400).json({ message: "Invalid credentials" });
+    const sql = "SELECT id FROM users WHERE username = ? AND password = ?";
+    db.query(sql, [username, password], (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: "Error retrieving data" });
+        }
 
-        const user = results[0];
+        if (result.length === 0) {
+            return res.status(404).json({ message: "Invalid credentials" });
+        }
 
-        // Compare passwords
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
-
-        // Generate token
-        const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-
-        res.json({ message: "Login successful", token });
+        res.json({ message: "Login successful", userId: result[0].id });
     });
 });
 
-// **Start Server**
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Fetch Previous Thoughts
+app.get("/getPreviousThoughts", (req, res) => {
+    const userId = req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "Missing userId" });
+    }
+
+    const query = "SELECT text_history FROM users WHERE id = ?";
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        if (results.length === 0) {
+            return res.json({ text_history: [] });
+        }
+
+        try {
+            res.json({ text_history: results[0]?.text_history ? results[0].text_history.split("*") : [] });
+        } catch (error) {
+            console.error("Error processing text_history:", error);
+            res.json({ text_history: [] }); // Return empty array instead of crashing
+        }
+        
+    });
+});
+
+// Save Notes
+app.post("/saveNotes", (req, res) => {
+    const { userId, feeling, thoughts } = req.body;
+
+    db.query("SELECT text_history FROM users WHERE id = ?", [userId], (err, results) => {
+        if (err) return res.status(500).json({ message: "Database error" });
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const oldTextHistory = results[0].text_history || "";
+        const updatedTextHistory = oldTextHistory + "*" + thoughts;
+
+        db.query(
+            "UPDATE users SET feeling = ?, text_history = ? WHERE id = ?",
+            [feeling, updatedTextHistory, userId],
+            (err) => {
+                if (err) return res.status(500).json({ message: "Error updating data" });
+
+                res.json({ message: "Notes saved successfully" });
+            }
+        );
+    });
+});
+
+// Logout
+app.post("/logout", (req, res) => {
+    res.json({ message: "Logged out successfully" });
+});
+
+// Chat With Gemini
+app.post("/chatWithGemini", async (req, res) => {
+    const { userMessage } = req.body;
+
+    if (!userMessage) {
+        return res.status(400).json({ reply: "Message cannot be empty!" });
+    }
+
+    try {
+        const response = await axios.post(GEMINI_API_URL, {
+            contents: [{ role: "user", parts: [{ text: userMessage }] }],
+        });
+
+        res.json({ reply: response.data.candidates[0].content.parts[0].text });
+    } catch (error) {
+        console.error("Gemini API error:", error);
+        res.status(500).json({ reply: "Error getting response from Gemini." });
+    }
+});
+
+// Serve login.html
+app.get("/login.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "login.html"));
+});
+
+// Serve user.html
+app.get("/user/:userId", (req, res) => {
+    res.sendFile(path.join(__dirname, "user.html"));
+});
+
+// Start Server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});
+
+
+
+app.listen(3000, "0.0.0.0", () => {
+    console.log("Server running on port 3000");
+});

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #logoutButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red;
+        }
+
+        textarea {
+            background-color: pink;
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+
+        #messages {
+            background-color: lightgray;
+            width: 100%;
+            height: 150px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: blue;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: darkblue;
+        }
+
+        #sendButton {
+            background-color: green;
+        }
+
+        #sendButton:hover {
+            background-color: darkgreen;
+        }
+
+        #previousThoughts {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button id="logoutButton" onclick="logout()">Logout</button>
+    
+    <h1>Welcome!</h1>
+
+    <h3>Personal Diary Corner</h3>
+    <button id="toggleThoughtsButton" onclick="toggleThoughtsVisibility()">Show Thoughts</button>
+
+    <div id="previousThoughts">
+        <ul id="thoughtList">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <label for="feeling">Feeling:</label>
+    <textarea id="feeling" placeholder="How do you feel?"></textarea>
+
+    <label for="thoughts">Thoughts:</label>
+    <textarea id="thoughts" placeholder="Write your thoughts..."></textarea>
+
+    <button onclick="saveNotes()">Save Notes</button>
+
+    <h2>Chat Area</h2>
+    <div id="messages"></div> 
+    
+    <label for="messageInput">Send a Message:</label>
+    <textarea id="messageInput" placeholder="Type your message..."></textarea>
+    
+    <button id="sendButton" onclick="sendMessage()">Send</button>
+
+    <script>
+        const userId = window.location.pathname.split("/").pop();
+
+        if (!userId) {
+            alert("No user ID found. Redirecting...");
+            window.location.href = "login.html";  
+        }
+
+        function saveNotes() {
+            const feeling = document.getElementById("feeling").value;
+            const thoughts = document.getElementById("thoughts").value;
+            
+            fetch("/saveNotes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, feeling, thoughts })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById("feeling").value = "";
+                document.getElementById("thoughts").value = "";
+                loadPreviousThoughts(); 
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');  
+            window.location.replace("../login.html");
+        }
+
+        function toggleThoughtsVisibility() {
+            const thoughtsDiv = document.getElementById("previousThoughts");
+            const button = document.getElementById("toggleThoughtsButton");
+
+            if (thoughtsDiv.style.display === "none") {
+                thoughtsDiv.style.display = "block";
+                button.textContent = "Hide Thoughts";
+            } else {
+                thoughtsDiv.style.display = "none";
+                button.textContent = "Show Thoughts";
+            }
+        }
+
+        function loadPreviousThoughts() {
+            fetch("/getPreviousThoughts?userId=" + userId)
+                .then(response => response.json())
+                .then(data => {
+                    const thoughtList = document.getElementById("thoughtList");
+                    thoughtList.innerHTML = "";  
+
+                    if (data.text_history.length === 0) {
+                        thoughtList.innerHTML = "<li>No previous thoughts found.</li>";
+                        return;
+                    }
+
+                    data.text_history.forEach(thought => {
+                        const li = document.createElement("li");
+                        li.innerHTML = thought.replace(/\*/g, "<br>");
+                        thoughtList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error("Error fetching thoughts:", error));
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const messages = document.getElementById("messages");
+
+            if (messageInput.value.trim() === "") {
+                alert("Message cannot be empty!");
+                return;
+            }
+
+            // Display user's message
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.textContent = "You: " + messageInput.value;
+            messages.appendChild(userMessageDiv);
+            messages.scrollTop = messages.scrollHeight;
+
+            const userMessage = messageInput.value;
+            messageInput.value = ""; 
+
+            // Send message to Gemini backend
+            fetch("/chatWithGemini", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.textContent = "SoulBud: " + data.reply;
+                messages.appendChild(botMessageDiv);
+                messages.scrollTop = messages.scrollHeight;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                const errorMessageDiv = document.createElement("div");
+                errorMessageDiv.textContent = "Gemini: Error getting response.";
+                messages.appendChild(errorMessageDiv);
+            });
+        }
+
+        // Load previous thoughts on page load
+        loadPreviousThoughts();
+    </script>
+</body>
+</html>
