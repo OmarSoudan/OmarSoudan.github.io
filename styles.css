@@ -1,0 +1,73 @@
+nav {
+    background-image: url("images/nav.jpg");
+    padding: 10px; /* Add some padding */
+}
+
+ul {
+    list-style: none; /* Remove bullet points */
+    padding: 0;
+    margin: 0;
+    display: flex; /* Make items appear in a row */
+}
+
+li {
+    border: 2px solid black;
+    margin: 5px;
+    background-color: pink;
+    
+    cursor: pointer; /* Makes it look clickable */
+    transition: transform 0.1s, background-color 0.1s; /* Smooth effect */
+    height: 39px; /* Ensures consistent height */
+    display: flex; /* Allows <a> to be properly centered */
+    align-items: center; /* Centers <a> inside <li> */
+    justify-content: center;
+}
+
+li a {
+    text-decoration: none;
+    color: inherit;
+    width: 100%; /* Makes the link cover the entire box */
+    height: 100%; /* Ensures full coverage */
+    display: flex; /* Makes sure it's clickable everywhere */
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px; /* Adds horizontal spacing but keeps text centered */
+}
+
+li:active {
+    transform: scale(0.85); /* Shrinks slightly when clicked */
+    background-color: lightgray; /* Changes color on click */
+}
+/* Log in section*/
+
+.login-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    background: cyan;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+button:hover {
+    background: darkcyan;
+    color: white;
+}
