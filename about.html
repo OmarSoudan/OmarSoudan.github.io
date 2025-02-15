@@ -3,11 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Therapist</title>
+    <title>About | SoulSync</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Arial", sans-serif;
+        }
+
+        /* Background Theme - Matching Landing Page */
+        body {
+            background: linear-gradient(to right, #1a1a2e, #16213e);
+            color: white;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        /* Navigation Bar - Consistent Design */
+        nav {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+        }
+
+        nav ul li {
+            display: inline;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        nav ul li a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* Title Styling */
+        h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+        }
+
+        /* Content Box */
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .container p {
+            font-size: 18px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        /* Get Started Button */
+        .cta-btn {
+            background: #e94560;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 14px 40px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.8);
+            transition: 0.3s ease-in-out;
+            margin-top: 20px;
+        }
+
+        .cta-btn:hover {
+            background: #ff4d6d;
+            box-shadow: 0 0 25px rgba(255, 77, 109, 1);
+            transform: scale(1.1);
+        }
+
+        /* FAQ Section */
+        .faq {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .faq h2 {
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .faq-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .faq-item p {
+            display: none;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .faq-item.active p {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .faq h2 {
+                font-size: 24px;
+            }
+
+            .cta-btn {
+                font-size: 16px;
+                padding: 12px 30px;
+            }
+        }
+    </style>
 </head>
 <body>
-    
+
+    <!-- Navigation Bar -->
     <nav>
         <ul>
             <li><a href="login.html">Login</a></li>
@@ -15,6 +165,69 @@
             <li><a href="contact.html">Contact Us</a></li>
         </ul>
     </nav>
-    
+
+    <!-- About Section -->
+    <h1>About SoulSync</h1>
+
+    <div class="container">
+        <p>
+            Life can be overwhelming, and sometimes, we just need someone to talk to.  
+            **SoulSync** is an AI-powered emotional support companion designed to **listen,  
+            remember, and understand you**.  
+        </p>
+        <p>
+            💡 **Why Join SoulSync?**  
+            - Personalized conversations, tailored for you.  
+            - Available **24/7** whenever you need to talk.  
+            - Remembers important details about your life to provide **meaningful support**.  
+        </p>
+        <p>
+            Join us and **experience the comfort of a real connection**.
+        </p>
+
+        <!-- Get Started Button -->
+        <button class="cta-btn" id="getStarted">Get Started</button>
+
+        <!-- FAQ Section -->
+        <div class="faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <h3>❓ What is SoulSync?</h3>
+                <p>SoulSync is an AI companion that offers **personalized emotional support** through real conversations.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>❓ How does SoulSync remember me?</h3>
+                <p>Our AI securely stores **encrypted** details about your interactions, allowing it to provide a more personal experience.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>❓ Is my data safe?</h3>
+                <p>Absolutely! Your data is **fully encrypted and private**—we never share it with anyone.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>❓ Can I use SoulSync for free?</h3>
+                <p>Yes! We offer a free plan with core features, while premium plans unlock **deeper, more advanced interactions**.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Navigation and FAQ -->
+    <script>
+        // Redirect to Landing Page's Get Started Section
+        document.getElementById("getStarted").addEventListener("click", function() {
+            window.location.href = "index.html#start";
+        });
+
+        // FAQ Toggle Effect
+        document.querySelectorAll(".faq-item").forEach(item => {
+            item.addEventListener("click", () => {
+                item.classList.toggle("active");
+            });
+        });
+    </script>
+
 </body>
 </html>

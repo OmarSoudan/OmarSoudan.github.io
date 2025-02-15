@@ -1,52 +1,74 @@
-document.getElementById("loginForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    let username = document.getElementById("loginUsername").value;
-    let password = document.getElementById("loginPassword").value;
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("Script Loaded!"); // Debugging
 
-    console.log("Login Attempt:", username, password);
+    // **Handle Register Form**
+    const registerForm = document.getElementById("registerForm");
+    if (registerForm) {
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    try {
-        const response = await fetch("http://localhost:3000/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            const name = document.getElementById("registerName").value.trim();
+            const email = document.getElementById("registerEmail").value.trim();
+            const password = document.getElementById("registerPassword").value.trim();
+
+            console.log("Registering:", name, email, password); // Debugging
+
+            try {
+                const response = await fetch("http://localhost:5000/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, password }),
+                });
+
+                const data = await response.json();
+                console.log("Server Response:", data); // Debugging
+
+                if (response.ok) {
+                    alert("Registration successful!");
+                    registerForm.reset();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert("Network error, check server.");
+            }
         });
-
-        const result = await response.json();
-        alert(result.message);
-        
-        if (response.ok) {
-            console.log("Redirecting to:", `/user/${result.userId}`);
-            window.location.replace(`http://localhost:3000/user/${result.userId}`);
-
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to connect to server");
     }
-});
 
+    // **Handle Login Form**
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-document.getElementById("registerForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    let username = document.getElementById("registerUsername").value;
-    let email = document.getElementById("registerEmail").value;
-    let password = document.getElementById("registerPassword").value;
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value.trim();
 
-    console.log("Registration Attempt:", username, email, password);
+            console.log("Logging in:", email, password); // Debugging
 
-    try {
-        const response = await fetch("http://localhost:3000/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password })
+            try {
+                const response = await fetch("http://localhost:5000/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+                console.log("Server Response:", data); // Debugging
+
+                if (response.ok) {
+                    localStorage.setItem("token", data.token);
+                    localStorage.setItem("user", JSON.stringify(data.user));
+                    alert(`Welcome, ${data.user.name}! Redirecting...`);
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert("Network error, check server.");
+            }
         });
-
-        const result = await response.json();
-        alert(result.message);
-        if (response.ok) this.reset();  // Clear form if registration is successful
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to connect to server");
     }
 });

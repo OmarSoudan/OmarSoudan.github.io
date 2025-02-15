@@ -1,5 +1,5 @@
 nav {
-    background-image: url("nav.jpg");
+    background-image: url("images/nav.jpg");
     padding: 10px; /* Add some padding */
 }
 
@@ -70,11 +70,4 @@ button {
 button:hover {
     background: darkcyan;
     color: white;
-}
-
-label{
-    background:yellow;
-}
-textarea{
-    background-color: blue;
 }

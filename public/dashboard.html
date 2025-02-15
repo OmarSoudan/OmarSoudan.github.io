@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | SoulSync</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Arial", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to right, #1a1a2e, #16213e);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .setup-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100vh;
+        }
+
+        .setup-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #30475e;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            text-align: center;
+        }
+
+        .setup-box button {
+            background: #e94560;
+            color: white;
+            font-size: 18px;
+            padding: 12px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .setup-box button:hover {
+            background: #ff4d6d;
+        }
+
+        .chat-container {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .chat-header {
+            background: #0f3460;
+            padding: 20px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 70%;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background: #e94560;
+            align-self: flex-end;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: #30475e;
+            align-self: flex-start;
+            text-align: left;
+            margin-right: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            background: #222831;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            background: #30475e;
+            color: white;
+        }
+
+        .chat-input button {
+            background: #e94560;
+            color: white;
+            font-size: 18px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #ff4d6d;
+        }
+
+        @media screen and (max-width: 768px) {
+            .chat-message {
+                max-width: 85%;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="setup-container">
+        <div class="setup-box">
+            <h1>Welcome to SoulSync</h1>
+            <p>Let's set up your AI best friend.</p>
+
+            <label for="userName">Your Name:</label>
+            <input type="text" id="userName" placeholder="Enter your name">
+
+            <label for="gender">Your Gender:</label>
+            <select id="gender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+
+            <label for="chatWith">Who do you want to chat with?</label>
+            <select id="chatWith">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+
+            <label for="aiName">What will you call your AI friend?</label>
+            <input type="text" id="aiName" placeholder="Enter a name">
+
+            <button onclick="saveSettings()">Save & Start Chat</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">Chat with <span id="aiDisplayName"></span></div>
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (!localStorage.getItem("aiName")) {
+                document.querySelector(".setup-container").style.display = "flex";
+            } else {
+                startChat();
+            }
+        });
+
+        function saveSettings() {
+            let userData = {
+                userName: document.getElementById("userName").value.trim(),
+                gender: document.getElementById("gender").value,
+                chatWith: document.getElementById("chatWith").value,
+                aiName: document.getElementById("aiName").value.trim()
+            };
+
+            fetch("/save_user_settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem("userName", userData.userName);
+                    localStorage.setItem("userGender", userData.gender);
+                    localStorage.setItem("chatWith", userData.chatWith);
+                    localStorage.setItem("aiName", userData.aiName);
+                    startChat();
+                } else {
+                    alert("Error saving settings.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        function startChat() {
+            document.getElementById("aiDisplayName").innerText = localStorage.getItem("aiName");
+            document.querySelector(".setup-container").style.display = "none";
+            document.querySelector(".chat-container").style.display = "flex";
+        }
+
+        function sendMessage() {
+    let inputField = document.getElementById("chatInput");
+    let message = inputField.value.trim();
+    if (message === "") return;
+
+    let chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML += `<div class="chat-message user-message">${message}</div>`;
+    inputField.value = "";
+
+    function fetchResponse(retryCount = 0) {
+        fetch("/chat", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.reply && data.reply.trim() !== "") {
+                chatBox.innerHTML += `<div class="chat-message bot-message">${data.reply}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else if (retryCount < 5) { // Retry up to 5 times
+                console.warn("Empty response, retrying... Attempt:", retryCount + 1);
+                setTimeout(() => fetchResponse(retryCount + 1), 2000); // Wait 2 seconds before retrying
+            } else {
+                chatBox.innerHTML += `<div class="chat-message bot-message">Sorry, I'm having trouble responding. Try again later.</div>`;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            if (retryCount < 10) { 
+                console.warn("Request failed, retrying... Attempt:", retryCount + 1);
+                setTimeout(() => fetchResponse(retryCount + 1), 2000); // Retry after 2 seconds
+            } else {
+                chatBox.innerHTML += `<div class="chat-message bot-message">Sorry, something went wrong. Try again later.</div>`;
+            }
+        });
+    }
+
+    fetchResponse(); // Start fetching response
+}
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!localStorage.getItem("aiName")) {
+        document.querySelector(".setup-container").style.display = "flex";
+    } else {
+        startChat();
+        loadChatHistory(); // Load previous chat history
+    }
+});
+
+function loadChatHistory() {
+    const userEmail = localStorage.getItem("userEmail"); // Retrieve email from localStorage
+    const userId = localStorage.getItem("userId"); // Retrieve userId from localStorage
+
+    fetch("/chat-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, userId: userId }) // Send user info
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = ""; // Clear chat box before loading history
+
+            data.chatHistory.forEach(chat => {
+                chatBox.innerHTML += `<div class="chat-message user-message">${chat.message}</div>`;
+                chatBox.innerHTML += `<div class="chat-message bot-message">${chat.response}</div>`;
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to latest message
+        }
+    })
+    .catch(error => console.error("Error loading chat history:", error));
+}
+
+
+    </script>
+
+</body>
+</html>
